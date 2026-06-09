@@ -1,0 +1,100 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+.vercel/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache
+.cache/
+.parcel-cache/
+.vite/
+.eslintcache
+
+# TypeScript
+*.tsbuildinfo
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Firebase
+.firebase/
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
+
+# Package managers
+.pnp/
+.pnp.js
+
+# Storybook
+storybook-static/
+
+# Testing
+playwright-report/
+test-results/
+
+# Generated files
+*.tgz
+
+# Local Netlify folder
+.netlify/
+
+# Turborepo
+.turbo/
+
+# Docker
+.docker/
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+
+# Backup files
+*.bak
+*.old
+
+# Uploads (if generated locally)
+uploads/
+
+# Mac
+.AppleDouble
+.LSOverride
