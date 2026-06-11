@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/settings_provider.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -96,7 +96,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               controller: _nameCtrl,
               decoration: InputDecoration(
                 labelText: 'Update Name',
-                prefixIcon: const Icon(LucideIcons.user),
+                prefixIcon: Icon(LucideIcons.user),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -108,7 +108,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'New Password',
-                prefixIcon: const Icon(LucideIcons.lock),
+                prefixIcon: Icon(LucideIcons.lock),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -140,7 +140,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               height: 50,
               child: OutlinedButton.icon(
                 onPressed: _logout,
-                icon: const Icon(LucideIcons.logOut, color: Colors.red),
+                icon: Icon(LucideIcons.log_out, color: Colors.red),
                 label: const Text(
                   'Logout',
                   style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold),
@@ -159,3 +159,5 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 }
+
+

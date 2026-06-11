@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/inventory_provider.dart';
@@ -129,7 +129,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 style: TextStyle(color: Color(0xFF8A8080), fontSize: 12),
               ),
               label: const Icon(
-                LucideIcons.refreshCw,
+                LucideIcons.refresh_cw,
                 color: Color(0xFF8A8080),
                 size: 16,
               ),
@@ -287,7 +287,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                       alignment: Alignment.centerRight,
                       child: ElevatedButton.icon(
                         onPressed: _showAddProductDialog,
-                        icon: const Icon(LucideIcons.plus, size: 16),
+                        icon: Icon(LucideIcons.plus, size: 16),
                         label: const Text(
                           '+Add',
                           style: TextStyle(fontWeight: FontWeight.bold),
@@ -352,7 +352,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                                             ),
                                           ),
                                       icon: const Icon(
-                                        LucideIcons.edit2,
+                                        LucideIcons.edit_2,
                                         size: 16,
                                         color: Color(0xFF1FABEA),
                                       ),
@@ -368,7 +368,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                                             ),
                                           ),
                                       icon: const Icon(
-                                        LucideIcons.trash2,
+                                        LucideIcons.trash_2,
                                         size: 16,
                                         color: Color(0xFFD43500),
                                       ),
@@ -424,12 +424,12 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                                       Column(
                                         children: const [
                                           Icon(
-                                            LucideIcons.chevronUp,
+                                            LucideIcons.chevron_up,
                                             size: 12,
                                             color: Color(0xFF8A8080),
                                           ),
                                           Icon(
-                                            LucideIcons.chevronDown,
+                                            LucideIcons.chevron_down,
                                             size: 12,
                                             color: Color(0xFF8A8080),
                                           ),
@@ -514,7 +514,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '₹${product['mrp']}',
+                                      'â‚¹${product['mrp']}',
                                       style: const TextStyle(
                                         color: Color(0xFF8A8080),
                                         fontSize: 12,
@@ -533,7 +533,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '₹${product['costPrice'] ?? 0}',
+                                      'â‚¹${product['costPrice'] ?? 0}',
                                       style: const TextStyle(
                                         color: Color(0xFF8A8080),
                                         fontSize: 12,
@@ -552,7 +552,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '₹${((product['mrp'] as num).toDouble() - ((product['costPrice'] ?? 0) as num).toDouble())}',
+                                      'â‚¹${((product['mrp'] as num).toDouble() - ((product['costPrice'] ?? 0) as num).toDouble())}',
                                       style: const TextStyle(
                                         color: Color(0xFF8A8080),
                                         fontSize: 12,
@@ -595,3 +595,5 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     );
   }
 }
+
+

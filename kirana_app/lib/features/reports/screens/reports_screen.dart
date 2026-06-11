@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
@@ -16,10 +16,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
   final periods = ['daily', 'weekly', 'monthly', 'yearly'];
 
   final stats = [
-    {'label': 'Total Revenue', 'value': '₹1,86,450', 'period': 'This Month'},
-    {'label': 'Total Profit', 'value': '₹42,180', 'period': 'This Month'},
+    {'label': 'Total Revenue', 'value': 'â‚¹1,86,450', 'period': 'This Month'},
+    {'label': 'Total Profit', 'value': 'â‚¹42,180', 'period': 'This Month'},
     {'label': 'Total Bills', 'value': '892', 'period': 'This Month'},
-    {'label': 'Avg. Bill Value', 'value': '₹209', 'period': 'This Month'},
+    {'label': 'Avg. Bill Value', 'value': 'â‚¹209', 'period': 'This Month'},
   ];
 
   final topProducts = [
@@ -136,7 +136,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         Row(
                           children: [
                             const Icon(
-                              LucideIcons.trendingUp,
+                              LucideIcons.trending_up,
                               color: AppTheme.accent,
                               size: 12,
                             ),
@@ -480,7 +480,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           ),
                         ),
                         Text(
-                          '₹${product['revenue']}',
+                          'â‚¹${product['revenue']}',
                           style: const TextStyle(
                             fontWeight: FontWeight.w500,
                             color: AppTheme.foreground,
@@ -622,7 +622,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(
-                      LucideIcons.fileText,
+                      LucideIcons.file_text,
                       color: Colors.white,
                       size: 24,
                     ),
@@ -706,3 +706,5 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 }
+
+

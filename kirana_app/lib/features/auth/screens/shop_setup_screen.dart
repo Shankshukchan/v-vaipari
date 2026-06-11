@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -110,7 +110,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
       ),
       child: Center(
         child: isCompleted
-            ? const Icon(LucideIcons.check, color: Colors.white, size: 20)
+            ? Icon(LucideIcons.check, color: Colors.white, size: 20)
             : Text(
                 stepNumber.toString(),
                 style: TextStyle(
@@ -212,7 +212,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                     color: AppTheme.muted,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     LucideIcons.upload,
                     color: AppTheme.mutedForeground,
                     size: 32,
@@ -251,7 +251,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                     color: AppTheme.primary,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(LucideIcons.store, color: Colors.white),
+                  child: Icon(LucideIcons.store, color: Colors.white),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -283,3 +283,5 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
     );
   }
 }
+
+

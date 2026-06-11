@@ -1,7 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
@@ -64,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         color: Colors.white.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         LucideIcons.store,
                         size: 80,
                         color: Colors.white,
@@ -107,3 +107,5 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
+
+

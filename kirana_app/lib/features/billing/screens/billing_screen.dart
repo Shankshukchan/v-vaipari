@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -72,7 +72,7 @@ class _BillingScreenState extends State<BillingScreen> {
                 'History',
                 style: TextStyle(color: Color(0xFF8A8080), fontSize: 12),
               ),
-              label: const Icon(
+              label: Icon(
                 LucideIcons.history,
                 color: Color(0xFF8A8080),
                 size: 16,
@@ -121,8 +121,8 @@ class _BillingScreenState extends State<BillingScreen> {
                   onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Feature coming soon!')),
                   ),
-                  icon: const Icon(
-                    LucideIcons.qrCode,
+                  icon: Icon(
+                    LucideIcons.qr_code,
                     color: Color(0xFFFF6900),
                   ),
                   style: IconButton.styleFrom(
@@ -164,7 +164,7 @@ class _BillingScreenState extends State<BillingScreen> {
                           ),
                         ),
                         Icon(
-                          LucideIcons.chevronDown,
+                          LucideIcons.chevron_down,
                           color: Color(0xFF8A8080),
                           size: 16,
                         ),
@@ -230,7 +230,7 @@ class _BillingScreenState extends State<BillingScreen> {
                             color: AppTheme.muted,
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             LucideIcons.scan,
                             size: 40,
                             color: AppTheme.mutedForeground,
@@ -268,7 +268,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      '${item['quantity']} packet × ₹${item['price']}',
+                                      '${item['quantity']} packet Ã— â‚¹${item['price']}',
                                       style: const TextStyle(
                                         fontSize: 12,
                                         color: Color(0xFF223960),
@@ -279,7 +279,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                 Row(
                                   children: [
                                     Text(
-                                      '₹${(item['price'] * item['quantity']).toStringAsFixed(2)}',
+                                      'â‚¹${(item['price'] * item['quantity']).toStringAsFixed(2)}',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: Color(0xFF223960),
@@ -300,7 +300,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                             4,
                                           ),
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           LucideIcons.x,
                                           color: Color(0xFFF42018),
                                           size: 14,
@@ -430,7 +430,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '₹${subtotal.toStringAsFixed(2)}',
+                                  'â‚¹${subtotal.toStringAsFixed(2)}',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -450,7 +450,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '₹${profit.toStringAsFixed(2)}',
+                                  'â‚¹${profit.toStringAsFixed(2)}',
                                   style: const TextStyle(
                                     color: Color(0xFF00C479),
                                     fontWeight: FontWeight.bold,
@@ -487,7 +487,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '₹${total.toStringAsFixed(2)}',
+                                    'â‚¹${total.toStringAsFixed(2)}',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -551,3 +551,5 @@ class _BillingScreenState extends State<BillingScreen> {
     );
   }
 }
+
+

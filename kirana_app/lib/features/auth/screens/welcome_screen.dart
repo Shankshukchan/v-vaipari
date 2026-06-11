@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -11,9 +11,9 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final features = [
       {'icon': LucideIcons.receipt, 'text': 'Fast Billing'},
-      {'icon': LucideIcons.packageCheck, 'text': 'Inventory'},
+      {'icon': LucideIcons.package_check, 'text': 'Inventory'},
       {'icon': LucideIcons.users, 'text': 'Customer Khata'},
-      {'icon': LucideIcons.trendingUp, 'text': 'Analytics'},
+      {'icon': LucideIcons.trending_up, 'text': 'Analytics'},
     ];
 
     return Scaffold(
@@ -48,7 +48,7 @@ class WelcomeScreen extends StatelessWidget {
                     color: Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     LucideIcons.store,
                     size: 64,
                     color: Colors.white,
@@ -170,7 +170,7 @@ class WelcomeScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () => context.go('/login'),
                   child: Text(
-                    'Skip to Demo →',
+                    'Skip to Demo â†’',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.4),
                       fontSize: 14,
@@ -190,3 +190,4 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 }
+

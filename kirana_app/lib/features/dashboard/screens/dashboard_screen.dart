@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
@@ -13,9 +13,9 @@ class DashboardScreen extends StatelessWidget {
     final stats = [
       {
         'label': "Today's Sales",
-        'val': '₹7,240',
+        'val': 'â‚¹7,240',
         'change': '+12%',
-        'icon': LucideIcons.trendingUp,
+        'icon': LucideIcons.trending_up,
         'color': AppTheme.accent,
         'positive': true,
       },
@@ -29,26 +29,26 @@ class DashboardScreen extends StatelessWidget {
       },
       {
         'label': 'Profit',
-        'val': '₹2,180',
+        'val': 'â‚¹2,180',
         'change': '+15%',
-        'icon': LucideIcons.indianRupee,
+        'icon': LucideIcons.indian_rupee,
         'color': AppTheme.accent,
         'positive': true,
       },
       {
         'label': 'Credit Due',
-        'val': '₹12,450',
+        'val': 'â‚¹12,450',
         'change': '5 customers',
-        'icon': LucideIcons.alertCircle,
+        'icon': LucideIcons.alert_circle,
         'color': const Color(0xFFF97316),
         'positive': false,
       },
     ];
 
     final topProducts = [
-      {'name': 'Tata Salt 1kg', 'sold': '156 units sold', 'revenue': '₹3120'},
-      {'name': 'Parle-G Biscuit', 'sold': '243 units sold', 'revenue': '₹2430'},
-      {'name': 'Fortune Oil 1L', 'sold': '89 units sold', 'revenue': '₹7120'},
+      {'name': 'Tata Salt 1kg', 'sold': '156 units sold', 'revenue': 'â‚¹3120'},
+      {'name': 'Parle-G Biscuit', 'sold': '243 units sold', 'revenue': 'â‚¹2430'},
+      {'name': 'Fortune Oil 1L', 'sold': '89 units sold', 'revenue': 'â‚¹7120'},
     ];
 
     return Scaffold(
@@ -109,7 +109,7 @@ class DashboardScreen extends StatelessWidget {
                           color: Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           LucideIcons.sparkles,
                           color: Colors.white,
                         ),
@@ -135,7 +135,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          '₹1,86,450',
+                          'â‚¹1,86,450',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 32,
@@ -145,8 +145,8 @@ class DashboardScreen extends StatelessWidget {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(
-                              LucideIcons.trendingUp,
+                            Icon(
+                              LucideIcons.trending_up,
                               color: AppTheme.accent,
                               size: 16,
                             ),
@@ -519,8 +519,8 @@ class DashboardScreen extends StatelessWidget {
                                             fontSize: 14,
                                           ),
                                         ),
-                                        const Icon(
-                                          LucideIcons.chevronRight,
+                                        Icon(
+                                          LucideIcons.chevron_right,
                                           color: AppTheme.accent,
                                           size: 16,
                                         ),
@@ -550,7 +550,7 @@ class DashboardScreen extends StatelessWidget {
                                               8,
                                             ),
                                           ),
-                                          child: const Icon(
+                                          child: Icon(
                                             LucideIcons.package,
                                             color: AppTheme.accent,
                                             size: 20,
@@ -679,8 +679,8 @@ class DashboardScreen extends StatelessWidget {
                                     color: AppTheme.primary.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(
-                                    LucideIcons.trendingUp,
+                                  child: Icon(
+                                    LucideIcons.trending_up,
                                     color: AppTheme.primary,
                                   ),
                                 ),
@@ -707,8 +707,8 @@ class DashboardScreen extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                const Icon(
-                                  LucideIcons.chevronRight,
+                                Icon(
+                                  LucideIcons.chevron_right,
                                   color: AppTheme.mutedForeground,
                                 ),
                               ],
@@ -751,3 +751,5 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
+
+

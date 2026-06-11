@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_lucide/flutter_lucide.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
@@ -159,7 +159,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
               ),
             ),
-            const Icon(LucideIcons.chevronRight, color: AppTheme.mutedForeground),
+            Icon(LucideIcons.chevron_right, color: AppTheme.mutedForeground),
           ],
         ),
       ),
@@ -175,13 +175,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         elevation: 0,
         leading: method.isNotEmpty
             ? IconButton(
-                icon: const Icon(LucideIcons.arrowLeft, color: AppTheme.foreground),
+                icon: Icon(LucideIcons.arrow_left, color: AppTheme.foreground),
                 onPressed: () => setState(() {
                   method = method == 'email_verify' ? 'email_otp' : '';
                 }),
               )
             : IconButton(
-                icon: const Icon(LucideIcons.arrowLeft, color: AppTheme.foreground),
+                icon: Icon(LucideIcons.arrow_left, color: AppTheme.foreground),
                 onPressed: () => context.pop(),
               ),
       ),
@@ -229,7 +229,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
                       const SizedBox(height: 16),
                       _buildMethodButton(
-                        icon: LucideIcons.logIn,
+                        icon: LucideIcons.log_in,
                         iconColor: Colors.green,
                         iconBg: Colors.green.withOpacity(0.1),
                         title: 'Google Sign-In',
@@ -251,7 +251,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           labelText: 'Email Address',
-                          prefixIcon: const Icon(LucideIcons.mail),
+                          prefixIcon: Icon(LucideIcons.mail),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ).animate().fadeIn().slideY(begin: 0.1),
@@ -277,7 +277,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: 'Enter 6-digit OTP',
-                          prefixIcon: const Icon(LucideIcons.key),
+                          prefixIcon: Icon(LucideIcons.key),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ).animate().fadeIn().slideY(begin: 0.1),
@@ -303,7 +303,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
                           labelText: 'Phone Number',
-                          prefixIcon: const Icon(LucideIcons.phone),
+                          prefixIcon: Icon(LucideIcons.phone),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ).animate().fadeIn().slideY(begin: 0.1),
@@ -313,7 +313,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         obscureText: true,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: const Icon(LucideIcons.lock),
+                          prefixIcon: Icon(LucideIcons.lock),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
@@ -338,7 +338,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         controller: _regNameCtrl,
                         decoration: InputDecoration(
                           labelText: 'Full Name',
-                          prefixIcon: const Icon(LucideIcons.user),
+                          prefixIcon: Icon(LucideIcons.user),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ).animate().fadeIn().slideY(begin: 0.1),
@@ -348,7 +348,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
                           labelText: 'Phone Number',
-                          prefixIcon: const Icon(LucideIcons.phone),
+                          prefixIcon: Icon(LucideIcons.phone),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
@@ -358,7 +358,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         obscureText: true,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: const Icon(LucideIcons.lock),
+                          prefixIcon: Icon(LucideIcons.lock),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
@@ -384,3 +384,5 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
+
+
