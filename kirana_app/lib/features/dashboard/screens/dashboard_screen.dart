@@ -1,12 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../auth/providers/auth_provider.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  String _userName = 'Owner';
+  String _shopName = 'My Store';
+  bool _isLoadingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final data = await ref.read(authRepositoryProvider).getCurrentUser();
+      setState(() {
+        _userName = data['name'] as String? ?? 'Owner';
+        final shop = data['shop'];
+        _shopName = shop != null ? (shop['name'] as String? ?? 'My Store') : 'My Store';
+        _isLoadingProfile = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingProfile = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,16 +116,16 @@ class DashboardScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Welcome back,',
+                            'Welcome, ${_isLoadingProfile ? '' : _userName}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontSize: 14,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'Sharma Kirana Store',
-                            style: TextStyle(
+                          Text(
+                            _isLoadingProfile ? 'Loading...' : _shopName,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 24,
                               fontWeight: FontWeight.w500,
@@ -179,12 +210,12 @@ class DashboardScreen extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-  crossAxisCount: 2,
-  crossAxisSpacing: 12,
-  mainAxisSpacing: 12,
-  mainAxisExtent: 150,
-),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        mainAxisExtent: 150,
+                      ),
                       itemCount: stats.length,
                       itemBuilder: (context, index) {
                         final stat = stats[index];
@@ -202,65 +233,57 @@ class DashboardScreen extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              child: Expanded(
-  child:Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: stat['color'] as Color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(
-        stat['icon'] as IconData,
-        color: Colors.white,
-        size: 20,
-      ),
-    ),
-
-    const Spacer(),
-
-    Text(
-      stat['label'] as String,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        color: AppTheme.mutedForeground,
-        fontSize: 12,
-      ),
-    ),
-
-    const SizedBox(height: 4),
-
-    FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Text(
-        stat['val'] as String,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.primary,
-        ),
-      ),
-    ),
-
-    const SizedBox(height: 2),
-
-    Text(
-      stat['change'] as String,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        color: AppTheme.accent,
-        fontSize: 12,
-      ),
-    ),
-  ],
-)
-)
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: stat['color'] as Color,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      stat['icon'] as IconData,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    stat['label'] as String,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: AppTheme.mutedForeground,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      stat['val'] as String,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    stat['change'] as String,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: AppTheme.accent,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             )
                             .animate()
                             .fadeIn(delay: (100 * index).ms)
@@ -303,14 +326,10 @@ class DashboardScreen extends StatelessWidget {
                                     gridData: const FlGridData(show: false),
                                     titlesData: FlTitlesData(
                                       rightTitles: const AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: false,
-                                        ),
+                                        sideTitles: SideTitles(showTitles: false),
                                       ),
                                       topTitles: const AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: false,
-                                        ),
+                                        sideTitles: SideTitles(showTitles: false),
                                       ),
                                       leftTitles: AxisTitles(
                                         sideTitles: SideTitles(
@@ -330,20 +349,13 @@ class DashboardScreen extends StatelessWidget {
                                           showTitles: true,
                                           getTitlesWidget: (val, meta) {
                                             const days = [
-                                              'Mon',
-                                              'Tue',
-                                              'Wed',
-                                              'Thu',
-                                              'Fri',
-                                              'Sat',
-                                              'Sun',
+                                              'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
                                             ];
                                             if (val >= 0 && val < days.length) {
                                               return Text(
                                                 days[val.toInt()],
                                                 style: const TextStyle(
-                                                  color:
-                                                      AppTheme.mutedForeground,
+                                                  color: AppTheme.mutedForeground,
                                                   fontSize: 10,
                                                 ),
                                               );
@@ -449,29 +461,13 @@ class DashboardScreen extends StatelessWidget {
                                   Expanded(
                                     child: Column(
                                       children: [
-                                        _buildLegendItem(
-                                          'Groceries',
-                                          '42%',
-                                          const Color(0xFF0EA5E9),
-                                        ),
+                                        _buildLegendItem('Groceries', '42%', const Color(0xFF0EA5E9)),
                                         const SizedBox(height: 8),
-                                        _buildLegendItem(
-                                          'Snacks',
-                                          '28%',
-                                          const Color(0xFF10B981),
-                                        ),
+                                        _buildLegendItem('Snacks', '28%', const Color(0xFF10B981)),
                                         const SizedBox(height: 8),
-                                        _buildLegendItem(
-                                          'Beverages',
-                                          '18%',
-                                          const Color(0xFFF59E0B),
-                                        ),
+                                        _buildLegendItem('Beverages', '18%', const Color(0xFFF59E0B)),
                                         const SizedBox(height: 8),
-                                        _buildLegendItem(
-                                          'Others',
-                                          '12%',
-                                          const Color(0xFF8B5CF6),
-                                        ),
+                                        _buildLegendItem('Others', '12%', const Color(0xFF8B5CF6)),
                                       ],
                                     ),
                                   ),
@@ -498,8 +494,7 @@ class DashboardScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
                                     'Top Selling Products',
@@ -546,9 +541,7 @@ class DashboardScreen extends StatelessWidget {
                                           height: 40,
                                           decoration: BoxDecoration(
                                             color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: const Icon(
                                             LucideIcons.package,
@@ -559,8 +552,7 @@ class DashboardScreen extends StatelessWidget {
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 product['name']!,
@@ -572,8 +564,7 @@ class DashboardScreen extends StatelessWidget {
                                               Text(
                                                 product['sold']!,
                                                 style: const TextStyle(
-                                                  color:
-                                                      AppTheme.mutedForeground,
+                                                  color: AppTheme.mutedForeground,
                                                   fontSize: 12,
                                                 ),
                                               ),
@@ -639,9 +630,7 @@ class DashboardScreen extends StatelessWidget {
                               ElevatedButton(
                                 onPressed: () => context.go('/app/inventory'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white.withOpacity(
-                                    0.2,
-                                  ),
+                                  backgroundColor: Colors.white.withOpacity(0.2),
                                   foregroundColor: Colors.white,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
@@ -687,8 +676,7 @@ class DashboardScreen extends StatelessWidget {
                                 const SizedBox(width: 12),
                                 const Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'View Detailed Reports',

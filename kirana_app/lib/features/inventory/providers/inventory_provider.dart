@@ -71,6 +71,25 @@ class InventoryNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
         } catch (e) {
           // Keep in queue if failed
         }
+      } else if (action['type'] == 'UPDATE_PRODUCT') {
+        try {
+          final id = action['payload']['id'];
+          final data = Map<String, dynamic>.from(action['payload'])..remove('id');
+          await dio.patch('/inventory/$id', data: data);
+          await queueBox.delete(key);
+          needsRefresh = true;
+        } catch (e) {
+          // Keep in queue if failed
+        }
+      } else if (action['type'] == 'DELETE_PRODUCT') {
+        try {
+          final id = action['payload']['id'];
+          await dio.delete('/inventory/$id');
+          await queueBox.delete(key);
+          needsRefresh = true;
+        } catch (e) {
+          // Keep in queue if failed
+        }
       }
     }
     
@@ -126,6 +145,80 @@ class InventoryNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
       'payload': payload,
       'timestamp': DateTime.now().toIso8601String(),
     }));
+  }
+
+  Future<void> updateProduct(String productId, Map<String, dynamic> updates) async {
+    // Update locally first
+    final currentList = state.value ?? [];
+    final updatedList = currentList.map((p) {
+      final id = p['_id'] ?? p['id'];
+      if (id == productId) return {...p, ...updates};
+      return p;
+    }).toList();
+    state = AsyncValue.data(updatedList);
+    await _box.put('products', jsonEncode(updatedList));
+
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+
+    if (hasInternet) {
+      final dio = ref.read(dioProvider);
+      try {
+        await dio.patch('/inventory/$productId', data: updates);
+        state = await AsyncValue.guard(() => _fetchProducts());
+      } catch (e) {
+        _queueAction('UPDATE_PRODUCT', {'id': productId, ...updates});
+      }
+    } else {
+      _queueAction('UPDATE_PRODUCT', {'id': productId, ...updates});
+    }
+  }
+
+  Future<void> deleteProduct(String productId) async {
+    // Remove locally first
+    final currentList = state.value ?? [];
+    final updatedList = currentList.where((p) {
+      final id = p['_id'] ?? p['id'];
+      return id != productId;
+    }).toList();
+    state = AsyncValue.data(updatedList);
+    await _box.put('products', jsonEncode(updatedList));
+
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+
+    if (hasInternet) {
+      final dio = ref.read(dioProvider);
+      try {
+        await dio.delete('/inventory/$productId');
+        state = await AsyncValue.guard(() => _fetchProducts());
+      } catch (e) {
+        _queueAction('DELETE_PRODUCT', {'id': productId});
+      }
+    } else {
+      _queueAction('DELETE_PRODUCT', {'id': productId});
+    }
+  }
+
+  /// Find a product by barcode from the loaded list.
+  /// Returns null if not found locally; optionally hits the API.
+  Future<Map<String, dynamic>?> findByBarcode(String barcode) async {
+    // First check local cache
+    final products = state.value ?? [];
+    final match = products.where((p) => p['barcode'] == barcode).toList();
+    if (match.isNotEmpty) return match.first;
+
+    // Try API lookup
+    final dio = ref.read(dioProvider);
+    try {
+      final response = await dio.get('/inventory/barcode/$barcode');
+      if (response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+    } catch (e) {
+      // Not found on server
+    }
+    return null;
   }
 }
 

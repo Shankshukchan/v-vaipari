@@ -43,38 +43,35 @@ class AuthRepository {
     }
   }
 
-  Future<void> register(String name, String phone, String password) async {
+  /// Returns true if email already exists in database
+  Future<bool> checkEmail(String email) async {
     try {
-      final response = await _dio.post('/auth/register', data: {
-        'name': name,
-        'phone': phone,
-        'password': password,
-      });
-
+      final response = await _dio.post('/auth/check-email', data: {'email': email});
       if (response.data['success'] == true) {
-        await _saveToken(response.data['data']['token']);
-      } else {
-        throw Exception('Registration failed');
+        return response.data['data']['emailExists'] as bool;
       }
+      throw Exception('Failed to check email');
     } on DioException catch (e) {
-      print('API Error [register]: $e');
+      print('API Error [checkEmail]: $e');
       if (e.response != null) print('Response data: ${e.response?.data}');
       if (e.response != null && e.response?.data != null) {
-        throw Exception(e.response?.data['message'] ?? 'Registration failed');
+        throw Exception(e.response?.data['message'] ?? 'Failed to check email');
       }
-      throw Exception('Network error during registration');
+      throw Exception('Network error while checking email');
     } catch (e) {
-      print('Unknown Error [register]: $e');
+      print('Unknown Error [checkEmail]: $e');
       rethrow;
     }
   }
 
-  Future<void> sendOtp(String email) async {
+  /// Send OTP to email. Returns emailExists flag from server.
+  Future<bool> sendOtp(String email) async {
     try {
       final response = await _dio.post('/auth/send-otp', data: {'email': email});
-      if (response.data['success'] != true) {
-        throw Exception('Failed to send OTP');
+      if (response.data['success'] == true) {
+        return response.data['data']['emailExists'] as bool? ?? false;
       }
+      throw Exception('Failed to send OTP');
     } on DioException catch (e) {
       print('API Error [sendOtp]: $e');
       if (e.response != null) print('Response data: ${e.response?.data}');
@@ -106,6 +103,41 @@ class AuthRepository {
     }
   }
 
+  /// Register with email, password, shop name, and optional GST.
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+    required String shopName,
+    String? gstin,
+  }) async {
+    try {
+      final response = await _dio.post('/auth/register', data: {
+        'name': name,
+        'email': email,
+        'password': password,
+        'shopName': shopName,
+        'gstin': gstin,
+      });
+
+      if (response.data['success'] == true) {
+        await _saveToken(response.data['data']['token']);
+      } else {
+        throw Exception('Registration failed');
+      }
+    } on DioException catch (e) {
+      print('API Error [register]: $e');
+      if (e.response != null) print('Response data: ${e.response?.data}');
+      if (e.response != null && e.response?.data != null) {
+        throw Exception(e.response?.data['message'] ?? 'Registration failed');
+      }
+      throw Exception('Network error during registration');
+    } catch (e) {
+      print('Unknown Error [register]: $e');
+      rethrow;
+    }
+  }
+
   Future<void> googleAuth(String idToken) async {
     try {
       final response = await _dio.post('/auth/google', data: {'idToken': idToken});
@@ -120,6 +152,24 @@ class AuthRepository {
       throw Exception(e.response?.data['message'] ?? 'Google Auth failed');
     } catch (e) {
       print('Unknown Error [googleAuth]: $e');
+      rethrow;
+    }
+  }
+
+  /// Fetch current user profile with populated shop data.
+  Future<Map<String, dynamic>> getCurrentUser() async {
+    try {
+      final response = await _dio.get('/auth/me');
+      if (response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      throw Exception('Failed to fetch user profile');
+    } on DioException catch (e) {
+      print('API Error [getCurrentUser]: $e');
+      if (e.response != null) print('Response data: ${e.response?.data}');
+      throw Exception(e.response?.data['message'] ?? 'Failed to fetch user profile');
+    } catch (e) {
+      print('Unknown Error [getCurrentUser]: $e');
       rethrow;
     }
   }
