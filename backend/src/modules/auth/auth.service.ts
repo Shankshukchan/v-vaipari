@@ -1,43 +1,40 @@
 import bcrypt from 'bcryptjs';
-import { User, Otp, Role } from '../../models';
+import { User, Otp, Shop, Role } from '../../models';
 import { signToken } from '../../utils/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { Resend } from 'resend';
 import { env } from '../../config/env';
-import type { RegisterInput, LoginInput, SendOtpInput, VerifyOtpInput, GoogleAuthInput } from './auth.schema';
+import type { RegisterInput, LoginInput, SendOtpInput, VerifyOtpInput, GoogleAuthInput, CheckEmailInput } from './auth.schema';
 
 const resend = new Resend(env.RESEND_API_KEY || 're_dummy');
 const SALT_ROUNDS = 10;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'dummy');
 
 export async function registerUser(input: RegisterInput) {
-  let user = await User.findOne({
-    $or: [
-      { phone: input.phone || undefined },
-      { email: input.email || undefined },
-    ].filter(c => Object.values(c)[0] !== undefined),
-  });
+  let user = await User.findOne({ email: input.email });
 
   if (user) {
     throw new Error('User already exists');
   }
 
-  let passwordHash: string | null = null;
-  if (input.password) {
-    passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
-  }
+  const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+
+  const shop = await Shop.create({
+    name: input.shopName,
+    gstin: input.gstin || undefined,
+  });
 
   user = await User.create({
     name: input.name,
-    phone: input.phone,
     email: input.email,
     passwordHash,
     role: Role.OWNER,
+    shopId: shop._id,
   });
 
   const token = signToken({
     userId: user._id.toString(),
-    shopId: user.shopId?.toString() ?? null,
+    shopId: shop._id.toString(),
     role: user.role,
   });
 
@@ -78,6 +75,11 @@ export async function loginUser(input: LoginInput) {
   return { user: { ...userObj, id: userObj._id }, token };
 }
 
+export async function checkEmail(input: CheckEmailInput) {
+  const user = await User.findOne({ email: input.email });
+  return { emailExists: !!user };
+}
+
 export async function getCurrentUser(userId: string) {
   const user = await User.findById(userId).populate('shopId').lean();
   if (!user) throw new Error('User not found');
@@ -115,6 +117,8 @@ export async function updateUser(userId: string, input: { name?: string; passwor
 }
 
 export async function sendOtp(input: SendOtpInput) {
+  const existingUser = await User.findOne({ email: input.email });
+
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -139,7 +143,7 @@ export async function sendOtp(input: SendOtpInput) {
     console.log(`\n\n[MOCK EMAIL (No API Key)] To: ${input.email} | OTP: ${code}\n\n`);
   }
 
-  return { message: 'OTP sent successfully to email' };
+  return { message: 'OTP sent successfully to email', emailExists: !!existingUser };
 }
 
 export async function verifyOtp(input: VerifyOtpInput) {
@@ -150,9 +154,9 @@ export async function verifyOtp(input: VerifyOtpInput) {
 
   await Otp.deleteOne({ email: input.email });
 
-  let user = await User.findOne({ email: input.email });
+  const user = await User.findOne({ email: input.email });
   if (!user) {
-    user = await User.create({ email: input.email, name: input.email.split('@')[0], role: Role.OWNER });
+    throw new Error('No account found with this email. Please register first.');
   }
 
   const token = signToken({

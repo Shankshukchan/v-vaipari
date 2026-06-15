@@ -5,8 +5,8 @@
  */
 
 import type { Request, Response } from 'express';
-import { registerSchema, loginSchema, sendOtpSchema, verifyOtpSchema, googleAuthSchema } from './auth.schema';
-import { registerUser, loginUser, getCurrentUser, updateUser, sendOtp, verifyOtp, googleAuth } from './auth.service';
+import { registerSchema, loginSchema, sendOtpSchema, verifyOtpSchema, googleAuthSchema, checkEmailSchema } from './auth.schema';
+import { registerUser, loginUser, getCurrentUser, updateUser, sendOtp, verifyOtp, googleAuth, checkEmail } from './auth.service';
 import { ok, created, fail, serverError } from '../../utils/response';
 
 // POST /api/auth/register
@@ -59,6 +59,22 @@ export async function updateMe(req: Request, res: Response) {
     ok(res, user);
   } catch (err) {
     serverError(res);
+  }
+}
+
+// POST /api/auth/check-email
+export async function checkEmailHandler(req: Request, res: Response) {
+  const parsed = checkEmailSchema.safeParse(req.body);
+  if (!parsed.success) {
+    fail(res, 'Validation failed');
+    return;
+  }
+
+  try {
+    const result = await checkEmail(parsed.data);
+    ok(res, result);
+  } catch (err: any) {
+    fail(res, err.message);
   }
 }
 

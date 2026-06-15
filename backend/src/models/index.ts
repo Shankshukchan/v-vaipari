@@ -62,6 +62,7 @@ const shopSchema = new Schema({
 const productSchema = new Schema({
   shopId: { type: Schema.Types.ObjectId, ref: 'Shop', required: true },
   name: { type: String, required: true },
+  barcode: { type: String, unique: true, sparse: true },
   unit: { type: String, default: 'pcs' },
   mrp: { type: Number, required: true },
   costPrice: { type: Number, required: true },

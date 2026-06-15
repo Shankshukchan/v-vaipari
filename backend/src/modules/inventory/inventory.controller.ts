@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { createProductSchema, updateProductSchema, adjustStockSchema } from './inventory.schema';
 import {
   listProducts, listLowStock, getProduct, createProduct,
-  updateProduct, deleteProduct, adjustStock, getStockLogs,
+  updateProduct, deleteProduct, adjustStock, getStockLogs, getProductByBarcode,
 } from './inventory.service';
 import { ok, created, fail, notFound } from '../../utils/response';
 import { qs } from '../../utils/query';
@@ -25,6 +25,11 @@ export async function lowStockHandler(req: Request, res: Response) {
 export async function getHandler(req: Request, res: Response) {
   const s = sid(req, res); if (!s) return;
   try { ok(res, await getProduct(param(req, 'id'), s)); }
+  catch (e) { notFound(res, (e as Error).message); }
+}
+export async function getBarcodeHandler(req: Request, res: Response) {
+  const s = sid(req, res); if (!s) return;
+  try { ok(res, await getProductByBarcode(s, param(req, 'barcode'))); }
   catch (e) { notFound(res, (e as Error).message); }
 }
 export async function createHandler(req: Request, res: Response) {
@@ -55,6 +60,6 @@ export async function adjustStockHandler(req: Request, res: Response) {
 }
 export async function stockLogsHandler(req: Request, res: Response) {
   const s = sid(req, res); if (!s) return;
-  try { ok(res, await getStockLogs(param(req, 'id'), s)); }
+  try { ok(res, await getStockLogs(s, param(req, 'id'))); }
   catch (e) { notFound(res, (e as Error).message); }
 }
