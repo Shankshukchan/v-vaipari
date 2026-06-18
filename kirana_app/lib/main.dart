@@ -10,6 +10,7 @@ void main() async {
   await Hive.openBox('inventory');
   await Hive.openBox('sync_queue');
   await Hive.openBox('bills');
+  await Hive.openBox('khata');
   
   runApp(const ProviderScope(child: KiranaApp()));
 }

@@ -8,6 +8,7 @@ import '../../features/auth/screens/shop_setup_screen.dart';
 import '../../core/layouts/main_layout.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/inventory/screens/inventory_screen.dart';
+import '../../features/inventory/screens/low_stock_screen.dart';
 import '../../features/billing/screens/billing_screen.dart';
 import '../../features/khata/screens/khata_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
@@ -62,6 +63,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const SettingsScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/app/low-stock',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const LowStockScreen(),
       ),
     ],
     // TODO: Add redirect logic based on auth state

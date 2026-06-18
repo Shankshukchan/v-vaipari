@@ -33,4 +33,20 @@ class SettingsRepository {
       throw Exception('Update error: $e');
     }
   }
+
+  Future<void> updateUpiId(String upiId) async {
+    try {
+      final response = await _dio.patch('/auth/me', data: {'upiId': upiId});
+      if (response.data['success'] != true) {
+        throw Exception('Failed to update UPI ID');
+      }
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data != null) {
+        throw Exception(e.response?.data['message'] ?? 'Update failed');
+      }
+      throw Exception('Network error during update');
+    } catch (e) {
+      throw Exception('Update error: $e');
+    }
+  }
 }

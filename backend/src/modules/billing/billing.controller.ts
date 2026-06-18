@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { createBillSchema, updateBillStatusSchema } from './billing.schema';
-import { createBill, listBills, getBill, updateBillStatus } from './billing.service';
+import { createBill, listBills, getBill, updateBillStatus, deleteBill } from './billing.service';
 import { ok, created, fail, notFound } from '../../utils/response';
 import { qs } from '../../utils/query';
 import { param } from '../../utils/params';
@@ -36,5 +36,11 @@ export async function updateStatusHandler(req: Request, res: Response) {
   const p = updateBillStatusSchema.safeParse(req.body);
   if (!p.success) { fail(res, 'Validation failed'); return; }
   try { ok(res, await updateBillStatus(param(req, 'id'), s, p.data)); }
+  catch (e) { notFound(res, (e as Error).message); }
+}
+
+export async function deleteHandler(req: Request, res: Response) {
+  const s = sid(req, res); if (!s) return;
+  try { ok(res, await deleteBill(param(req, 'id'), s)); }
   catch (e) { notFound(res, (e as Error).message); }
 }

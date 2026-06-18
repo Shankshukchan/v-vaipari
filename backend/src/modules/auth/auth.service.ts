@@ -96,17 +96,23 @@ export async function getCurrentUser(userId: string) {
       name: (user.shopId as any).name,
       gstin: (user.shopId as any).gstin,
       logoUrl: (user.shopId as any).logoUrl,
+      upiId: (user.shopId as any).upiId,
     } : null
   };
 }
 
-export async function updateUser(userId: string, input: { name?: string; password?: string }) {
+export async function updateUser(userId: string, input: { name?: string; password?: string; upiId?: string }) {
   const data: any = {};
   if (input.name) data.name = input.name;
   if (input.password) data.passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
 
   const user = await User.findByIdAndUpdate(userId, data, { returnDocument: 'after' }).lean();
   if (!user) throw new Error('User not found');
+
+  // If upiId is provided, update the shop
+  if (input.upiId !== undefined && user.shopId) {
+    await Shop.findByIdAndUpdate(user.shopId, { upiId: input.upiId });
+  }
 
   return {
     id: user._id,

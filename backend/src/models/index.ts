@@ -20,7 +20,6 @@ export enum TransactionType {
 export enum PaymentMode {
   CASH = 'CASH',
   UPI = 'UPI',
-  CARD = 'CARD',
   CREDIT = 'CREDIT',
 }
 
@@ -57,12 +56,14 @@ const shopSchema = new Schema({
   pincode: { type: String },
   logoUrl: { type: String },
   signatureUrl: { type: String },
+  upiId: { type: String },
 }, { timestamps: true });
 
 const productSchema = new Schema({
   shopId: { type: Schema.Types.ObjectId, ref: 'Shop', required: true },
   name: { type: String, required: true },
-  barcode: { type: String, unique: true, sparse: true },
+  barcode: { type: String },
+  category: { type: String, enum: ['Groceries', 'Snacks', 'Beverages', 'Others'], default: 'Others' },
   unit: { type: String, default: 'pcs' },
   mrp: { type: Number, required: true },
   costPrice: { type: Number, required: true },
@@ -70,7 +71,11 @@ const productSchema = new Schema({
   lowStock: { type: Number, default: 5 },
 }, { timestamps: true });
 
+// Barcode must be unique per shop, not globally
+productSchema.index({ shopId: 1, barcode: 1 }, { unique: true, sparse: true });
+
 const inventoryLogSchema = new Schema({
+  shopId: { type: Schema.Types.ObjectId, ref: 'Shop', required: true },
   productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
   type: { type: String, enum: Object.values(StockType), required: true },
   qty: { type: Number, required: true },
@@ -84,7 +89,10 @@ const customerSchema = new Schema({
   balance: { type: Number, default: 0 },
 }, { timestamps: true });
 
+customerSchema.index({ shopId: 1, phone: 1 }, { unique: true });
+
 const transactionSchema = new Schema({
+  shopId: { type: Schema.Types.ObjectId, ref: 'Shop', required: true },
   customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
   type: { type: String, enum: Object.values(TransactionType), required: true },
   amount: { type: Number, required: true },
@@ -102,6 +110,8 @@ const billItemSchema = new Schema({
 const billSchema = new Schema({
   shopId: { type: Schema.Types.ObjectId, ref: 'Shop', required: true },
   customerId: { type: Schema.Types.ObjectId, ref: 'Customer' },
+  customerName: { type: String },
+  customerPhone: { type: String },
   items: [billItemSchema],
   subtotal: { type: Number, required: true },
   discount: { type: Number, default: 0 },

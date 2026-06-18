@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/dio_client.dart';
 
@@ -13,9 +15,63 @@ class AuthRepository {
 
   AuthRepository(this._dio);
 
-  Future<void> _saveToken(String token) async {
+  Future<void> _saveToken(String token, {String? shopId}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
+    if (shopId != null && shopId.isNotEmpty) {
+      await prefs.setString('shop_id', shopId);
+    }
+  }
+
+  /// Clear cache for the current user only (before token swap).
+  Future<void> _clearCurrentUserCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token == null || token.isEmpty) return;
+      final parts = token.split('.');
+      if (parts.length != 3) return;
+      final payload = utf8.decode(base64Url.decode(parts[1]));
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      final shopId = data['shopId'] as String?;
+      if (shopId == null) return;
+      final inventoryBox = Hive.box('inventory');
+      final billsBox = Hive.box('bills');
+      final khataBox = Hive.box('khata');
+      final syncBox = Hive.box('sync_queue');
+      // Remove keys belonging to this shop
+      for (final key in inventoryBox.keys.toList()) {
+        if (key is String && key.startsWith('${shopId}_')) {
+          await inventoryBox.delete(key);
+        }
+      }
+      for (final key in billsBox.keys.toList()) {
+        if (key is String && key.startsWith('${shopId}_')) {
+          await billsBox.delete(key);
+        }
+      }
+      for (final key in khataBox.keys.toList()) {
+        if (key is String && key.startsWith('${shopId}_')) {
+          await khataBox.delete(key);
+        }
+      }
+      for (final key in syncBox.keys.toList()) {
+        final raw = syncBox.get(key);
+        if (raw is String) {
+          try {
+            final action = jsonDecode(raw);
+            if (action['shopId'] == shopId) await syncBox.delete(key);
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+  }
+
+  String? _extractShopId(dynamic data) {
+    if (data == null) return null;
+    final user = data['user'];
+    if (user == null) return null;
+    return user['shopId'] as String? ?? (user['shopId']?['_id'] as String?);
   }
 
   Future<void> login(String phone, String password) async {
@@ -26,7 +82,8 @@ class AuthRepository {
       });
 
       if (response.data['success'] == true) {
-        await _saveToken(response.data['data']['token']);
+        final data = response.data['data'];
+        await _saveToken(data['token'], shopId: _extractShopId(data));
       } else {
         throw Exception('Login failed');
       }
@@ -89,7 +146,8 @@ class AuthRepository {
         'otp': otp,
       });
       if (response.data['success'] == true) {
-        await _saveToken(response.data['data']['token']);
+        final data = response.data['data'];
+        await _saveToken(data['token'], shopId: _extractShopId(data));
       } else {
         throw Exception('OTP Verification failed');
       }
@@ -121,7 +179,8 @@ class AuthRepository {
       });
 
       if (response.data['success'] == true) {
-        await _saveToken(response.data['data']['token']);
+        final data = response.data['data'];
+        await _saveToken(data['token'], shopId: _extractShopId(data));
       } else {
         throw Exception('Registration failed');
       }
@@ -142,7 +201,8 @@ class AuthRepository {
     try {
       final response = await _dio.post('/auth/google', data: {'idToken': idToken});
       if (response.data['success'] == true) {
-        await _saveToken(response.data['data']['token']);
+        final data = response.data['data'];
+        await _saveToken(data['token'], shopId: _extractShopId(data));
       } else {
         throw Exception('Google Auth failed');
       }
@@ -174,8 +234,13 @@ class AuthRepository {
     }
   }
 
+  Future<void> logoutCurrentUserCache() async {
+    await _clearCurrentUserCache();
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
+    await prefs.remove('shop_id');
   }
 }

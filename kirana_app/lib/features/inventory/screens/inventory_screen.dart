@@ -14,6 +14,7 @@ class InventoryScreen extends ConsumerStatefulWidget {
 
 class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   String searchQuery = '';
+  String categoryFilter = 'All';
 
   String getStockStatus(int stock, int alert) {
     if (stock == 0) return 'out';
@@ -44,6 +45,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final mrpCtrl = TextEditingController();
     final costCtrl = TextEditingController();
     final stockCtrl = TextEditingController();
+    String category = 'Others';
 
     showModalBottomSheet(
       context: context,
@@ -114,6 +116,20 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
+                StatefulBuilder(
+                  builder: (ctx, setDialogState) => DropdownButtonFormField<String>(
+                    value: category,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    items: const [
+                      DropdownMenuItem(value: 'Groceries', child: Text('Groceries')),
+                      DropdownMenuItem(value: 'Snacks', child: Text('Snacks')),
+                      DropdownMenuItem(value: 'Beverages', child: Text('Beverages')),
+                      DropdownMenuItem(value: 'Others', child: Text('Others')),
+                    ],
+                    onChanged: (v) => setDialogState(() => category = v ?? 'Others'),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: mrpCtrl,
                   keyboardType: TextInputType.number,
@@ -136,7 +152,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (nameCtrl.text.isNotEmpty && mrpCtrl.text.isNotEmpty) {
                         // Check for duplicate barcode
                         if (barcodeCtrl.text.isNotEmpty) {
@@ -148,14 +164,23 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                             return;
                           }
                         }
-                        ref.read(inventoryProvider.notifier).addProduct({
-                          'name': nameCtrl.text,
-                          'barcode': barcodeCtrl.text.isNotEmpty ? barcodeCtrl.text : null,
-                          'mrp': double.tryParse(mrpCtrl.text) ?? 0,
-                          'costPrice': double.tryParse(costCtrl.text) ?? 0,
-                          'stock': double.tryParse(stockCtrl.text) ?? 0,
-                        });
-                        Navigator.pop(ctx);
+                        try {
+                          await ref.read(inventoryProvider.notifier).addProduct({
+                            'name': nameCtrl.text,
+                            'barcode': barcodeCtrl.text.isNotEmpty ? barcodeCtrl.text : null,
+                            'category': category,
+                            'mrp': double.tryParse(mrpCtrl.text) ?? 0,
+                            'costPrice': double.tryParse(costCtrl.text) ?? 0,
+                            'stock': double.tryParse(stockCtrl.text) ?? 0,
+                          });
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to add product: $e')),
+                            );
+                          }
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -184,6 +209,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final costCtrl = TextEditingController(text: '${product['costPrice'] ?? ''}');
     final stockCtrl = TextEditingController(text: '${product['stock'] ?? 0}');
     final lowStockCtrl = TextEditingController(text: '${product['lowStock'] ?? 5}');
+    String category = product['category'] as String? ?? 'Others';
 
     showModalBottomSheet(
       context: context,
@@ -251,6 +277,20 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
+                StatefulBuilder(
+                  builder: (ctx, setDialogState) => DropdownButtonFormField<String>(
+                    value: category,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    items: const [
+                      DropdownMenuItem(value: 'Groceries', child: Text('Groceries')),
+                      DropdownMenuItem(value: 'Snacks', child: Text('Snacks')),
+                      DropdownMenuItem(value: 'Beverages', child: Text('Beverages')),
+                      DropdownMenuItem(value: 'Others', child: Text('Others')),
+                    ],
+                    onChanged: (v) => setDialogState(() => category = v ?? 'Others'),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: mrpCtrl,
                   keyboardType: TextInputType.number,
@@ -294,6 +334,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                         ref.read(inventoryProvider.notifier).updateProduct(productId, {
                           'name': nameCtrl.text,
                           'barcode': barcodeCtrl.text.isNotEmpty ? barcodeCtrl.text : null,
+                          'category': category,
                           'mrp': double.tryParse(mrpCtrl.text) ?? 0,
                           'costPrice': double.tryParse(costCtrl.text) ?? 0,
                           'stock': double.tryParse(stockCtrl.text) ?? 0,
@@ -406,13 +447,12 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
         data: (products) {
-          final filteredProducts = products
-              .where(
-                (p) => (p['name'] as String).toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                ),
-              )
-              .toList();
+          final filteredProducts = products.where((p) {
+            final name = (p['name'] as String).toLowerCase();
+            final matchesSearch = name.contains(searchQuery.toLowerCase());
+            final matchesCategory = categoryFilter == 'All' || p['category'] == categoryFilter;
+            return matchesSearch && matchesCategory;
+          }).toList();
           final totalItems = products.length;
           final totalStockValue = products.fold<double>(
             0,
@@ -449,6 +489,32 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 36,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: ['All', 'Groceries', 'Snacks', 'Beverages', 'Others'].map((cat) {
+                          final isSelected = categoryFilter == cat;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(cat, style: TextStyle(
+                                fontSize: 12,
+                                color: isSelected ? Colors.white : const Color(0xFF223960),
+                              )),
+                              selected: isSelected,
+                              onSelected: (_) => setState(() => categoryFilter = cat),
+                              selectedColor: const Color(0xFF223960),
+                              backgroundColor: const Color(0xFFF6F6F6),
+                              checkmarkColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
                     const SizedBox(height: 16),

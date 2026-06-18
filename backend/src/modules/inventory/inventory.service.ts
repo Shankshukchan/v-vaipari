@@ -53,6 +53,7 @@ export async function updateProduct(productId: string, shopId: string, input: Up
 export async function deleteProduct(productId: string, shopId: string) {
   const product = await Product.findOneAndDelete({ _id: productId, shopId });
   if (!product) throw new Error('Product not found');
+  await InventoryLog.deleteMany({ productId });
   return product;
 }
 
@@ -80,6 +81,7 @@ export async function adjustStock(productId: string, shopId: string, input: Adju
   await product.save();
 
   await InventoryLog.create({
+    shopId,
     productId,
     type: input.type as StockType,
     qty: input.qty,

@@ -3,6 +3,7 @@ import { createCustomerSchema, updateCustomerSchema, addTransactionSchema } from
 import {
   listCustomers, getCustomer, createCustomer, updateCustomer,
   deleteCustomer, addTransaction, getTransactions, getOutstandingSummary,
+  getCustomerBills, clearCustomerKhata,
 } from './customers.service';
 import { ok, created, fail, notFound } from '../../utils/response';
 import { qs } from '../../utils/query';
@@ -56,5 +57,17 @@ export async function addTransactionHandler(req: Request, res: Response) {
 export async function getTransactionsHandler(req: Request, res: Response) {
   const s = sid(req, res); if (!s) return;
   try { ok(res, await getTransactions(param(req, 'id'), s)); }
+  catch (e) { notFound(res, (e as Error).message); }
+}
+
+export async function getCustomerBillsHandler(req: Request, res: Response) {
+  const s = sid(req, res); if (!s) return;
+  try { ok(res, await getCustomerBills(param(req, 'id'), s)); }
+  catch (e) { notFound(res, (e as Error).message); }
+}
+
+export async function clearKhataHandler(req: Request, res: Response) {
+  const s = sid(req, res); if (!s) return;
+  try { ok(res, await clearCustomerKhata(param(req, 'id'), s)); }
   catch (e) { notFound(res, (e as Error).message); }
 }

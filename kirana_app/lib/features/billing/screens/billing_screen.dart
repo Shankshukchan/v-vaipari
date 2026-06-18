@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -8,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/barcode_scanner_screen.dart';
 import '../../inventory/providers/inventory_provider.dart';
 import '../providers/bills_provider.dart';
+import 'payment_screen.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
   const BillingScreen({super.key});
@@ -18,16 +18,12 @@ class BillingScreen extends ConsumerStatefulWidget {
 
 class _BillingScreenState extends ConsumerState<BillingScreen> {
   final List<Map<String, dynamic>> cart = [];
-  String customerName = '';
-  String customerPhone = '';
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
 
   double get subtotal =>
       cart.fold(0, (sum, item) => sum + ((item['price'] as double) * (item['quantity'] as int)));
-  double get profit => cart.fold(
-    0,
-    (sum, item) => sum + (((item['price'] as double) * (item['quantity'] as int)) * 0.15),
-  );
-  double get total => subtotal + (subtotal * 0.05);
+  double get total => subtotal;
 
   void removeItem(String id) {
     setState(() {
@@ -69,6 +65,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           'productId': product['_id'],
           'name': product['name'],
           'price': (product['mrp'] as num).toDouble(),
+          'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0,
           'quantity': 1,
           'mrp': (product['mrp'] as num).toDouble(),
           'barcode': product['barcode'],
@@ -189,48 +186,48 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     );
   }
 
-  Future<void> _generateBill() async {
+  void _proceedToPayment() {
     if (cart.isEmpty) return;
 
-    final bill = {
-      'id': 'bill_${DateTime.now().millisecondsSinceEpoch}',
-      'items': cart.map((item) => {
-        'productId': item['productId'] ?? item['id'],
-        'name': item['name'],
-        'quantity': item['quantity'],
-        'price': item['price'],
-        'total': (item['price'] as double) * (item['quantity'] as int),
-      }).toList(),
-      'customerName': customerName.isNotEmpty ? customerName : null,
-      'customerPhone': customerPhone.isNotEmpty ? customerPhone : null,
-      'subtotal': subtotal,
-      'profit': profit,
-      'discount': 0,
-      'total': total,
-      'paymentMode': 'CASH',
-      'status': 'PAID',
-      'createdAt': DateTime.now().toIso8601String(),
-    };
-
-    await ref.read(billsProvider.notifier).saveBill(bill);
-
-    setState(() {
-      cart.clear();
-      customerName = '';
-      customerPhone = '';
-    });
-
-    if (mounted) {
+    if (_nameCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bill saved successfully!')),
+        const SnackBar(content: Text('Customer name is required')),
       );
+      return;
     }
+    if (_phoneCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Customer phone number is required')),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PaymentScreen(
+          cart: List.from(cart),
+          customerName: _nameCtrl.text.trim(),
+          customerPhone: _phoneCtrl.text.trim(),
+          subtotal: subtotal,
+          total: total,
+        ),
+      ),
+    ).then((result) {
+      if (result == true) {
+        setState(() {
+          cart.clear();
+          _nameCtrl.clear();
+          _phoneCtrl.clear();
+        });
+      }
+    });
   }
 
-  void _showBillHistory() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const _BillHistoryScreen()),
-    );
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -426,112 +423,83 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
                       const SizedBox(height: 16),
 
+                      // Customer Info
                       Container(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF223960), Color(0xFF0EA5E9)],
-                          ),
-                          borderRadius: BorderRadius.circular(24),
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Customer Name:', style: TextStyle(color: Colors.white, fontSize: 14)),
-                            const SizedBox(height: 8),
-                            TextField(
-                              onChanged: (v) => setState(() => customerName = v),
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                hintText: 'Enter name',
-                                hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                                filled: true,
-                                fillColor: Colors.white.withOpacity(0.2),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            const Text(
+                              'Customer Details',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF223960),
+                                fontSize: 14,
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text('Contact:', style: TextStyle(color: Colors.white, fontSize: 14)),
-                            const SizedBox(height: 8),
-                            TextField(
-                              onChanged: (v) => setState(() => customerPhone = v),
-                              style: const TextStyle(color: Colors.white),
-                              keyboardType: TextInputType.phone,
-                              decoration: InputDecoration(
-                                hintText: '+91 XXXXX XXXXX',
-                                hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                                filled: true,
-                                fillColor: Colors.white.withOpacity(0.2),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16.0),
-                              child: Divider(color: Colors.white.withOpacity(0.3)),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Subtotal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                Text('₹${subtotal.toStringAsFixed(2)}',
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              ],
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Profit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                Text('₹${profit.toStringAsFixed(2)}',
-                                    style: const TextStyle(color: Color(0xFF00C479), fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16.0),
-                              child: Divider(color: Colors.white.withOpacity(0.3)),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
+                            TextField(
+                              controller: _nameCtrl,
+                              decoration: InputDecoration(
+                                hintText: 'Customer Name *',
+                                prefixIcon: const Icon(LucideIcons.user, size: 18),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                isDense: true,
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text('Total',
-                                      style: TextStyle(
-                                          color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text('₹${total.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                ],
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _phoneCtrl,
+                              keyboardType: TextInputType.phone,
+                              decoration: InputDecoration(
+                                hintText: 'Phone Number *',
+                                prefixIcon: const Icon(LucideIcons.phone, size: 18),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                isDense: true,
                               ),
                             ),
                           ],
                         ),
-                      ).animate().fadeIn().slideY(begin: 0.1, end: 0),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Total
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF223960), Color(0xFF0EA5E9)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Total',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text('₹${total.toStringAsFixed(2)}',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          ],
+                        ),
+                      ),
 
                       const SizedBox(height: 24),
 
+                      // Proceed Button
                       ElevatedButton(
-                        onPressed: cart.isEmpty ? null : _generateBill,
+                        onPressed: cart.isEmpty ? null : _proceedToPayment,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
@@ -549,7 +517,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             child: const Text(
-                              'Generate Bill',
+                              'Proceed to Payment',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
@@ -563,6 +531,12 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showBillHistory() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const _BillHistoryScreen()),
     );
   }
 }
@@ -607,6 +581,7 @@ class _BillHistoryScreen extends ConsumerWidget {
               final createdAt = bill['createdAt'] as String? ?? '';
               final customerName = bill['customerName'] as String?;
               final status = bill['status'] as String? ?? 'PAID';
+              final billPaymentMode = bill['paymentMode'] as String? ?? 'CASH';
 
               String dateStr = '';
               if (createdAt.isNotEmpty) {
@@ -675,22 +650,46 @@ class _BillHistoryScreen extends ConsumerWidget {
                             dateStr,
                             style: const TextStyle(color: Color(0xFF8A8080), fontSize: 12),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: status == 'PAID'
-                                  ? const Color(0xFFE5FFF5)
-                                  : const Color(0xFFFFF3E0),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              status,
-                              style: TextStyle(
-                                color: status == 'PAID' ? const Color(0xFF00C479) : const Color(0xFFFF6900),
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: billPaymentMode == 'CREDIT'
+                                      ? const Color(0xFFFFF3E0)
+                                      : const Color(0xFFE8F5E9),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  billPaymentMode,
+                                  style: TextStyle(
+                                    color: billPaymentMode == 'CREDIT'
+                                        ? const Color(0xFFFF6900)
+                                        : const Color(0xFF00C479),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: status == 'PAID'
+                                      ? const Color(0xFFE5FFF5)
+                                      : const Color(0xFFFFF3E0),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  status,
+                                  style: TextStyle(
+                                    color: status == 'PAID' ? const Color(0xFF00C479) : const Color(0xFFFF6900),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -713,12 +712,12 @@ class _BillHistoryScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                '${item['name']} x${item['quantity']}',
+                                '${item['name']} x${item['quantity'] ?? item['qty']}',
                                 style: const TextStyle(fontSize: 13, color: Color(0xFF223960)),
                               ),
                             ),
                             Text(
-                              '₹${((item['total'] as num?) ?? ((item['price'] as num) * (item['quantity'] as num))).toStringAsFixed(2)}',
+                              '₹${((item['total'] as num?) ?? ((item['price'] as num) * (item['quantity'] ?? item['qty'] as num))).toStringAsFixed(2)}',
                               style: const TextStyle(fontSize: 13, color: Color(0xFF223960)),
                             ),
                           ],

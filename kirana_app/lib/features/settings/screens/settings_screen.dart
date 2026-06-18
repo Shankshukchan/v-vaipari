@@ -5,6 +5,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/settings_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../inventory/providers/inventory_provider.dart';
+import '../../billing/providers/bills_provider.dart';
+import '../../khata/providers/khata_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -16,6 +19,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _nameCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _upiIdCtrl = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _updateProfile() async {
@@ -48,7 +52,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _updateUpiId() async {
+    if (_upiIdCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a UPI ID')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(settingsProvider).updateUpiId(_upiIdCtrl.text.trim());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('UPI ID updated successfully!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Future<void> _logout() async {
+    // Clear current user's cached data (before token is removed)
+    await ref.read(authRepositoryProvider).logoutCurrentUserCache();
+
+    // Invalidate all data providers so they refetch fresh data on next login
+    ref.invalidate(inventoryProvider);
+    ref.invalidate(billsProvider);
+    ref.invalidate(khataProvider);
+    ref.invalidate(outstandingSummaryProvider);
+
     await ref.read(authRepositoryProvider).logout();
     if (mounted) {
       context.go('/welcome');
@@ -59,6 +97,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _passCtrl.dispose();
+    _upiIdCtrl.dispose();
     super.dispose();
   }
 
@@ -130,6 +169,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: _isLoading 
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 48),
+            const Divider(),
+            const SizedBox(height: 24),
+            const Text(
+              'Payment Settings',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'UPI ID for QR code generation during billing',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _upiIdCtrl,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                hintText: 'e.g. shopname@upi',
+                prefixIcon: const Icon(LucideIcons.qrCode),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _updateUpiId,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF6900),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Save UPI ID', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 48),
