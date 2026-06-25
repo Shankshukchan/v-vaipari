@@ -310,28 +310,34 @@ class _KhataScreenState extends ConsumerState<KhataScreen> {
             ),
           ),
 
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            child: TextField(
-              onChanged: (v) => setState(() => _searchQuery = v),
-              decoration: InputDecoration(
-                hintText: 'Search customers...',
-                hintStyle: const TextStyle(color: Color(0xFF8A8080)),
-                prefixIcon: const Icon(LucideIcons.search, color: Color(0xFF8A8080)),
-                filled: true,
-                fillColor: const Color(0xFFF6F6F6),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+          Expanded(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Column(
+                  children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: TextField(
+                onChanged: (v) => setState(() => _searchQuery = v),
+                decoration: InputDecoration(
+                  hintText: 'Search customers...',
+                  hintStyle: const TextStyle(color: Color(0xFF8A8080)),
+                  prefixIcon: const Icon(LucideIcons.search, color: Color(0xFF8A8080)),
+                  filled: true,
+                  fillColor: const Color(0xFFF6F6F6),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
-          ),
 
-          Expanded(
-            child: customersAsync.when(
+            Expanded(
+              child: customersAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(
                 child: Column(
@@ -561,6 +567,11 @@ class _KhataScreenState extends ConsumerState<KhataScreen> {
               },
             ),
           ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -746,9 +757,13 @@ class _CustomerDetailScreenState
 
           // Tab Content
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
                 // Transactions Tab
                 transactionsAsync.when(
                   loading: () =>
@@ -1020,7 +1035,9 @@ class _CustomerDetailScreenState
                     );
                   },
                 ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ],

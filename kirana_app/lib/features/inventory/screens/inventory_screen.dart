@@ -3,6 +3,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/barcode_scanner_screen.dart';
+import '../../../core/widgets/responsive_wrapper.dart';
 import '../providers/inventory_provider.dart';
 
 class InventoryScreen extends ConsumerStatefulWidget {
@@ -443,7 +444,8 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           ),
         ],
       ),
-      body: asyncProducts.when(
+      body: ResponsiveScaffoldBody(
+        child: asyncProducts.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
         data: (products) {
@@ -795,6 +797,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             ],
           );
         },
+      ),
       ),
     );
   }

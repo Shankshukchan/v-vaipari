@@ -4,7 +4,7 @@ import { signToken } from '../../utils/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { Resend } from 'resend';
 import { env } from '../../config/env';
-import type { RegisterInput, LoginInput, SendOtpInput, VerifyOtpInput, GoogleAuthInput, CheckEmailInput } from './auth.schema';
+import type { RegisterInput, LoginInput, SendOtpInput, VerifyOtpInput, GoogleAuthInput, CheckEmailInput, UpdateWithOtpInput } from './auth.schema';
 
 const resend = new Resend(env.RESEND_API_KEY || 're_dummy');
 const SALT_ROUNDS = 10;
@@ -174,6 +174,72 @@ export async function verifyOtp(input: VerifyOtpInput) {
   const userObj = user.toObject();
   delete userObj.passwordHash;
   return { user: { ...userObj, id: userObj._id }, token };
+}
+
+export async function sendSettingsOtp(userId: string) {
+  const user = await User.findById(userId);
+  if (!user || !user.email) {
+    throw new Error('User email not found');
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await Otp.findOneAndUpdate(
+    { email: user.email },
+    { code, expiresAt },
+    { upsert: true, returnDocument: 'after' }
+  );
+
+  if (env.RESEND_API_KEY) {
+    try {
+      await resend.emails.send({
+        from: `Kirana App <${env.EMAIL_SENDER}>`,
+        to: user.email,
+        subject: 'OTP for Settings Update',
+        html: `<p>Your OTP for updating settings is: <strong>${code}</strong></p><p>It is valid for 10 minutes.</p>`,
+      });
+    } catch (error) {
+      console.error('Failed to send email via Resend:', error);
+    }
+  } else {
+    console.log(`\n\n[MOCK EMAIL (No API Key)] To: ${user.email} | OTP: ${code}\n\n`);
+  }
+
+  return { message: 'OTP sent successfully to email' };
+}
+
+export async function updateWithOtp(userId: string, input: UpdateWithOtpInput) {
+  const user = await User.findById(userId);
+  if (!user) throw new Error('User not found');
+  if (!user.email) throw new Error('User email not found');
+
+  const otpRecord = await Otp.findOne({ email: user.email });
+  if (!otpRecord || otpRecord.code !== input.otp || (otpRecord.expiresAt as Date) < new Date()) {
+    throw new Error('Invalid or expired OTP');
+  }
+
+  await Otp.deleteOne({ email: user.email });
+
+  const updateData: any = {};
+  if (input.name) updateData.name = input.name;
+  if (input.password) updateData.passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+
+  if (Object.keys(updateData).length > 0) {
+    await User.findByIdAndUpdate(userId, updateData);
+  }
+
+  if (input.upiId !== undefined && user.shopId) {
+    await Shop.findByIdAndUpdate(user.shopId, { upiId: input.upiId });
+  }
+
+  const updatedUser = await User.findById(userId).lean();
+  return {
+    id: updatedUser!._id,
+    name: updatedUser!.name,
+    phone: updatedUser!.phone,
+    role: updatedUser!.role,
+  };
 }
 
 export async function googleAuth(input: GoogleAuthInput) {

@@ -1,22 +1,58 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:hive/hive.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/services/connectivity_service.dart';
+import '../../../core/utils/token_utils.dart';
+import '../../../core/widgets/responsive_wrapper.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../inventory/screens/low_stock_screen.dart';
 
 final dashboardStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final dio = ref.read(dioProvider);
-  final response = await dio.get('/bills/dashboard');
-  if (response.data['success'] == true) {
-    return Map<String, dynamic>.from(response.data['data']);
+  final isOnline = ref.read(isOnlineProvider);
+  final shopId = await getShopIdFromToken();
+  final cacheKey = shopId != null ? '${shopId}_dashboard' : 'dashboard';
+
+  if (isOnline) {
+    try {
+      final response = await dio.get('/bills/dashboard');
+      if (response.data['success'] == true) {
+        final data = Map<String, dynamic>.from(response.data['data']);
+        if (shopId != null) {
+          await Hive.box('inventory').put(cacheKey, jsonEncode(data));
+        }
+        return data;
+      }
+    } catch (e) {
+      // Fall through to cache
+    }
   }
-  throw Exception('Failed to load dashboard');
+
+  final cached = shopId != null ? Hive.box('inventory').get(cacheKey) : null;
+  if (cached != null) {
+    return Map<String, dynamic>.from(jsonDecode(cached));
+  }
+
+  return {
+    'todaySales': 0.0,
+    'todayBillsCount': 0,
+    'monthRevenue': 0.0,
+    'monthProfit': 0.0,
+    'totalCreditDue': 0.0,
+    'creditCustomers': 0,
+    'lowStockCount': 0,
+    'topProducts': [],
+    'dailySales': [],
+    'categoryBreakdown': {},
+  };
 });
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -217,10 +253,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
 
                   // Content
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-                    child: Column(
-                      children: [
+                  ResponsiveWrapper(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 20, 16, 24),
+                      child: Column(
+                        children: [
                         // Stats Grid
                         Row(
                           children: [
@@ -269,8 +306,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                               sideTitles: SideTitles(
                                                 showTitles: true,
                                                 getTitlesWidget: (val, meta) {
-                                                  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-                                                  if (val >= 0 && val < days.length) return Text(days[val.toInt()], style: const TextStyle(color: AppTheme.mutedForeground, fontSize: 10));
+                                                  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                                  const dayAbbr = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                                                  final today = DateTime.now();
+                                                  // dailySales[0] = 6 days ago, dailySales[6] = today
+                                                  final idx = val.toInt();
+                                                  if (idx >= 0 && idx < 7) {
+                                                    final day = today.subtract(Duration(days: 6 - idx));
+                                                    return Text(dayAbbr[day.weekday % 7], style: const TextStyle(color: AppTheme.mutedForeground, fontSize: 10));
+                                                  }
                                                   return const Text('');
                                                 },
                                               ),
@@ -482,6 +526,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ],
                     ),
                   ),
+                ),
                 ],
               ),
             ),

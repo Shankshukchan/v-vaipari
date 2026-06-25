@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../../core/widgets/responsive_wrapper.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -89,7 +90,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
         ),
       ),
-      body: ListView(
+      body: ResponsiveScaffoldBody(
+        child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           // Stats Grid
@@ -702,6 +704,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0),
         ],
+      ),
       ),
     );
   }

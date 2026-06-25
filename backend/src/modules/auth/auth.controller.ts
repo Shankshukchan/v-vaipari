@@ -5,8 +5,8 @@
  */
 
 import type { Request, Response } from 'express';
-import { registerSchema, loginSchema, sendOtpSchema, verifyOtpSchema, googleAuthSchema, checkEmailSchema } from './auth.schema';
-import { registerUser, loginUser, getCurrentUser, updateUser, sendOtp, verifyOtp, googleAuth, checkEmail } from './auth.service';
+import { registerSchema, loginSchema, sendOtpSchema, verifyOtpSchema, googleAuthSchema, checkEmailSchema, updateWithOtpSchema } from './auth.schema';
+import { registerUser, loginUser, getCurrentUser, updateUser, sendOtp, verifyOtp, googleAuth, checkEmail, sendSettingsOtp, updateWithOtp } from './auth.service';
 import { ok, created, fail, serverError } from '../../utils/response';
 
 // POST /api/auth/register
@@ -92,6 +92,32 @@ export async function sendOtpHandler(req: Request, res: Response) {
 export async function verifyOtpHandler(req: Request, res: Response) {
   try {
     const result = await verifyOtp(req.body);
+    ok(res, result);
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+}
+
+// POST /api/auth/send-settings-otp
+export async function sendSettingsOtpHandler(req: Request, res: Response) {
+  try {
+    const result = await sendSettingsOtp(req.user!.userId);
+    ok(res, result);
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+}
+
+// POST /api/auth/update-with-otp
+export async function updateWithOtpHandler(req: Request, res: Response) {
+  const parsed = updateWithOtpSchema.safeParse(req.body);
+  if (!parsed.success) {
+    fail(res, 'Validation failed');
+    return;
+  }
+
+  try {
+    const result = await updateWithOtp(req.user!.userId, parsed.data);
     ok(res, result);
   } catch (err: any) {
     fail(res, err.message);

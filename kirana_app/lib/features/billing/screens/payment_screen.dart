@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/network/dio_client.dart';
 import '../../khata/providers/khata_provider.dart';
+import '../../inventory/providers/inventory_provider.dart';
 import '../providers/bills_provider.dart';
 import 'bill_preview_screen.dart';
 
@@ -145,8 +146,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       if (response.data['success'] == true) {
         final serverBill = response.data['data'] as Map<String, dynamic>;
 
-        // Refresh bills list
+        // Refresh bills list and inventory stock
         ref.read(billsProvider.notifier).fetchBills();
+        ref.read(inventoryProvider.notifier).fetchProducts();
 
         if (mounted) {
           Navigator.of(context).pushReplacement(

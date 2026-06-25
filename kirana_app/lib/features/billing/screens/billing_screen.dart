@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/barcode_scanner_screen.dart';
+import '../../../core/widgets/responsive_wrapper.dart';
 import '../../inventory/providers/inventory_provider.dart';
 import '../providers/bills_provider.dart';
 import 'payment_screen.dart';
@@ -118,7 +119,11 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(ctx).viewInsets.bottom,
               ),
-              child: Column(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+                ),
+                child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const SizedBox(height: 12),
@@ -149,8 +154,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(
-                    height: 300,
+                  Flexible(
                     child: ListView.builder(
                       itemCount: filtered.length,
                       itemBuilder: (ctx, i) {
@@ -178,6 +182,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                     ),
                   ),
                 ],
+              ),
               ),
             );
           },
@@ -213,6 +218,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         ),
       ),
     ).then((result) {
+      ref.read(inventoryProvider.notifier).fetchProducts();
       if (result == true) {
         setState(() {
           cart.clear();
@@ -269,7 +275,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: ResponsiveScaffoldBody(
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -338,6 +345,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                                     children: [
                                       Text(
                                         item['name'],
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                           color: Color(0xFF223960),
@@ -351,64 +360,72 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                                     ],
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    InkWell(
-                                      onTap: () => decrementQty(item['id']),
-                                      child: Container(
-                                        width: 28,
-                                        height: 28,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF6F6F6),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: const Icon(LucideIcons.minus, size: 14, color: Color(0xFF223960)),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                      child: Text(
-                                        '${item['quantity']}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: Color(0xFF223960),
-                                        ),
-                                      ),
-                                    ),
-                                    InkWell(
-                                      onTap: () => incrementQty(item['id']),
-                                      child: Container(
-                                        width: 28,
-                                        height: 28,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF223960),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: const Icon(LucideIcons.plus, size: 14, color: Colors.white),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  '₹${((item['price'] as double) * (item['quantity'] as int)).toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF223960),
-                                  ),
-                                ),
                                 const SizedBox(width: 8),
-                                InkWell(
-                                  onTap: () => removeItem(item['id']),
-                                  child: Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF25955).withOpacity(0.24),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Icon(LucideIcons.x, color: Color(0xFFF42018), size: 14),
+                                Flexible(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      InkWell(
+                                        onTap: () => decrementQty(item['id']),
+                                        child: Container(
+                                          width: 28,
+                                          height: 28,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF6F6F6),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: const Icon(LucideIcons.minus, size: 14, color: Color(0xFF223960)),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        child: Text(
+                                          '${item['quantity']}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                            color: Color(0xFF223960),
+                                          ),
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () => incrementQty(item['id']),
+                                        child: Container(
+                                          width: 28,
+                                          height: 28,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF223960),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: const Icon(LucideIcons.plus, size: 14, color: Colors.white),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          '₹${((item['price'] as double) * (item['quantity'] as int)).toStringAsFixed(2)}',
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF223960),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      InkWell(
+                                        onTap: () => removeItem(item['id']),
+                                        child: Container(
+                                          width: 24,
+                                          height: 24,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF25955).withOpacity(0.24),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Icon(LucideIcons.x, color: Color(0xFFF42018), size: 14),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -530,6 +547,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                   ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -14,7 +14,6 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  // Flow: '' (email entry) → 'otp_verify' → done
   String _flow = '';
 
   final _emailCtrl = TextEditingController();
@@ -42,10 +41,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final emailExists = await ref.read(authRepositoryProvider).checkEmail(email);
 
       if (!emailExists) {
-        // Show registration popup
         if (mounted) _showRegisterDialog(email);
       } else {
-        // Send OTP and go to verify screen
         await ref.read(authRepositoryProvider).sendOtp(email);
         setState(() => _flow = 'otp_verify');
         if (mounted) {
@@ -299,125 +296,130 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isOtpFlow ? 'Verify OTP' : 'Welcome back',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.foreground,
-                      ),
-                    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1),
-                    const SizedBox(height: 8),
-                    Text(
-                      isOtpFlow
-                          ? 'Enter the 6-digit code sent to ${_emailCtrl.text}'
-                          : 'Enter your email to continue',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: AppTheme.mutedForeground,
-                      ),
-                    ).animate().fadeIn(delay: 100.ms),
-                    const SizedBox(height: 48),
-
-                    if (!isOtpFlow) ...[
-                      TextField(
-                        controller: _emailCtrl,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          labelText: 'Email Address',
-                          prefixIcon: const Icon(LucideIcons.mail),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
+            : Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isOtpFlow ? 'Verify OTP' : 'Welcome back',
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.foreground,
                           ),
-                        ),
-                      ).animate().fadeIn().slideY(begin: 0.1),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _handleContinue,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: const Text(
-                            'Continue',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                      const SizedBox(height: 32),
-                      const Center(
-                        child: Text(
-                          'We\'ll send an OTP to verify your email',
-                          style: TextStyle(
-                            fontSize: 13,
+                        ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1),
+                        const SizedBox(height: 8),
+                        Text(
+                          isOtpFlow
+                              ? 'Enter the 6-digit code sent to ${_emailCtrl.text}'
+                              : 'Enter your email to continue',
+                          style: const TextStyle(
+                            fontSize: 16,
                             color: AppTheme.mutedForeground,
                           ),
-                        ),
-                      ),
-                    ],
+                        ).animate().fadeIn(delay: 100.ms),
+                        const SizedBox(height: 48),
 
-                    if (isOtpFlow) ...[
-                      TextField(
-                        controller: _otpCtrl,
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
-                        decoration: InputDecoration(
-                          labelText: 'Enter 6-digit OTP',
-                          prefixIcon: const Icon(LucideIcons.key),
-                          counterText: '',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ).animate().fadeIn().slideY(begin: 0.1),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _handleVerifyOtp,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                        if (!isOtpFlow) ...[
+                          TextField(
+                            controller: _emailCtrl,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              labelText: 'Email Address',
+                              prefixIcon: const Icon(LucideIcons.mail),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ).animate().fadeIn().slideY(begin: 0.1),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _handleContinue,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: const Text(
+                                'Continue',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+                          const SizedBox(height: 32),
+                          const Center(
+                            child: Text(
+                              'We\'ll send an OTP to verify your email',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.mutedForeground,
+                              ),
                             ),
                           ),
-                          child: const Text(
-                            'Verify & Login',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                        ],
+
+                        if (isOtpFlow) ...[
+                          TextField(
+                            controller: _otpCtrl,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            decoration: InputDecoration(
+                              labelText: 'Enter 6-digit OTP',
+                              prefixIcon: const Icon(LucideIcons.key),
+                              counterText: '',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ).animate().fadeIn().slideY(begin: 0.1),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _handleVerifyOtp,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: const Text(
+                                'Verify & Login',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+                          const SizedBox(height: 16),
+                          Center(
+                            child: TextButton(
+                              onPressed: _handleContinue,
+                              child: const Text(
+                                'Resend OTP',
+                                style: TextStyle(color: AppTheme.primary),
+                              ),
                             ),
                           ),
-                        ),
-                      ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                      const SizedBox(height: 16),
-                      Center(
-                        child: TextButton(
-                          onPressed: _handleContinue,
-                          child: const Text(
-                            'Resend OTP',
-                            style: TextStyle(color: AppTheme.primary),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
       ),

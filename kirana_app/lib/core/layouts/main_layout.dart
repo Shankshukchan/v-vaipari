@@ -53,47 +53,76 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     final selectedIndex = _calculateSelectedIndex(context);
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 600;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: widget.child
-          .animate(key: ValueKey(GoRouterState.of(context).uri.path))
-          .fadeIn(duration: 220.ms)
-          .moveY(begin: 10, end: 0, curve: Curves.easeOut),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.95),
-          border: Border(
-            top: BorderSide(
-              color: AppTheme.border.withOpacity(0.8),
-              width: 0.5,
-            ),
-          ),
+      body: Row(
+        children: [
+          if (isLandscape || isWideScreen)
+            _buildSideRail(selectedIndex),
+          Expanded(child: widget.child
+              .animate(key: ValueKey(GoRouterState.of(context).uri.path))
+              .fadeIn(duration: 220.ms)
+              .moveY(begin: 10, end: 0, curve: Curves.easeOut)),
+        ],
+      ),
+      bottomNavigationBar: (!isLandscape && !isWideScreen)
+          ? Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.95),
+                border: Border(
+                  top: BorderSide(
+                    color: AppTheme.border.withOpacity(0.8),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildNavItem(0, LucideIcons.home, 'Home', selectedIndex, isLandscape),
+                      _buildNavItem(1, LucideIcons.package, 'Inventory', selectedIndex, isLandscape),
+                      _buildNavItem(2, LucideIcons.receipt, 'Bill', selectedIndex, isLandscape),
+                      _buildNavItem(3, LucideIcons.users, 'Khata', selectedIndex, isLandscape),
+                      _buildNavItem(4, LucideIcons.settings, 'Settings', selectedIndex, isLandscape),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildSideRail(int selectedIndex) {
+    return Container(
+      width: 72,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          right: BorderSide(color: AppTheme.border.withOpacity(0.8)),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(0, LucideIcons.home, 'Home', selectedIndex),
-                _buildNavItem(
-                  1,
-                  LucideIcons.package,
-                  'Inventory',
-                  selectedIndex,
-                ),
-                _buildNavItem(2, LucideIcons.receipt, 'Bill', selectedIndex),
-                _buildNavItem(3, LucideIcons.users, 'Khata', selectedIndex),
-                _buildNavItem(
-                  4,
-                  LucideIcons.settings,
-                  'Settings',
-                  selectedIndex,
-                ),
-              ],
-            ),
-          ),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildNavItem(0, LucideIcons.home, 'Home', selectedIndex, false),
+            const SizedBox(height: 8),
+            _buildNavItem(1, LucideIcons.package, 'Inventory', selectedIndex, false),
+            const SizedBox(height: 8),
+            _buildNavItem(2, LucideIcons.receipt, 'Bill', selectedIndex, false),
+            const SizedBox(height: 8),
+            _buildNavItem(3, LucideIcons.users, 'Khata', selectedIndex, false),
+            const SizedBox(height: 8),
+            _buildNavItem(4, LucideIcons.settings, 'Settings', selectedIndex, false),
+          ],
         ),
       ),
     );
@@ -104,10 +133,14 @@ class _MainLayoutState extends State<MainLayout> {
     IconData icon,
     String label,
     int selectedIndex,
+    bool compact,
   ) {
     final isActive = index == selectedIndex;
     final activeColor = const Color(0xFF21385D);
     final inactiveColor = const Color(0xFF8A8080);
+    final iconSize = compact ? 20.0 : 22.0;
+    final fontSize = compact ? 9.0 : 10.0;
+    final vPadding = compact ? 4.0 : 8.0;
 
     return Expanded(
       child: GestureDetector(
@@ -122,8 +155,8 @@ class _MainLayoutState extends State<MainLayout> {
               children: [
                 if (isActive)
                   Container(
-                    width: 48,
-                    height: 32,
+                    width: 44,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: activeColor.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(14),
@@ -134,7 +167,7 @@ class _MainLayoutState extends State<MainLayout> {
                   ),
                 Icon(
                       icon,
-                      size: 22,
+                      size: iconSize,
                       color: isActive ? activeColor : inactiveColor,
                     )
                     .animate(target: isActive ? 1 : 0)
@@ -145,27 +178,15 @@ class _MainLayoutState extends State<MainLayout> {
                     .moveY(begin: 0, end: -1),
               ],
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: vPadding),
             Text(
               label,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: fontSize,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
                 color: isActive ? activeColor : inactiveColor,
               ),
             ),
-            const SizedBox(height: 4),
-            if (isActive)
-              Container(
-                width: 4,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: activeColor,
-                  shape: BoxShape.circle,
-                ),
-              ).animate().scale(duration: 200.ms, curve: Curves.easeOutBack)
-            else
-              const SizedBox(height: 4),
           ],
         ),
       ),

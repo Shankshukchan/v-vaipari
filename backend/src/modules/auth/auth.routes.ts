@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { register, login, me, updateMe, sendOtpHandler, verifyOtpHandler, googleAuthHandler, checkEmailHandler } from './auth.controller';
+import { register, login, me, updateMe, sendOtpHandler, verifyOtpHandler, googleAuthHandler, checkEmailHandler, sendSettingsOtpHandler, updateWithOtpHandler } from './auth.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 
 const router = Router();
@@ -18,7 +18,9 @@ router.post('/send-otp',    sendOtpHandler);
 router.post('/verify-otp',  verifyOtpHandler);
 router.post('/google',      googleAuthHandler);
 
-router.get('/me',        authenticate, me);
-router.patch('/me',      authenticate, updateMe);
+router.get('/me',                  authenticate, me);
+router.patch('/me',                authenticate, updateMe);
+router.post('/send-settings-otp',  authenticate, sendSettingsOtpHandler);
+router.post('/update-with-otp',    authenticate, updateWithOtpHandler);
 
 export default router;

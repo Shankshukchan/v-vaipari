@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
+import '../../../core/services/connectivity_service.dart';
+import '../../../core/services/offline_utils.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/utils/token_utils.dart';
 
@@ -15,33 +15,26 @@ class KhataNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
 
   Box get _box => Hive.box('khata');
 
-  String _cacheKey(String shopId, String key) => '${shopId}_$key';
-
   Future<String?> _getShopId() => getShopIdFromToken();
 
   Future<List<Map<String, dynamic>>> _fetchCustomers() async {
     final shopId = await _getShopId();
     if (shopId == null) return [];
 
-    List<Map<String, dynamic>> customers = [];
+    final cached = getCachedList(_box, shopId, 'customers');
+    List<Map<String, dynamic>> customers = List.from(cached);
 
-    final cached = _box.get(_cacheKey(shopId, 'customers'));
-    if (cached != null) {
-      final List<dynamic> decoded = jsonDecode(cached);
-      customers = decoded.cast<Map<String, dynamic>>();
-    }
+    final isOnline = ref.read(isOnlineProvider);
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
-
-    if (hasInternet) {
+    if (isOnline) {
       final dio = ref.read(dioProvider);
       try {
         final response = await dio.get('/customers');
         if (response.data['success'] == true) {
           final List<dynamic> rawList = response.data['data'];
-          customers = rawList.cast<Map<String, dynamic>>();
-          await _box.put(_cacheKey(shopId, 'customers'), jsonEncode(customers));
+          final serverList = rawList.cast<Map<String, dynamic>>();
+          customers = mergeLocalChanges(serverList, cached);
+          await saveCachedList(_box, shopId, 'customers', customers);
         }
       } catch (e) {
         // Fallback to cached
@@ -60,10 +53,9 @@ class KhataNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
     final shopId = await _getShopId();
     if (shopId == null) return;
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+    final isOnline = ref.read(isOnlineProvider);
 
-    if (hasInternet) {
+    if (isOnline) {
       final dio = ref.read(dioProvider);
       try {
         final response = await dio.post('/customers', data: customer);
@@ -84,7 +76,11 @@ class KhataNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
     };
     final newList = [localCustomer, ...currentList];
     state = AsyncValue.data(newList);
-    await _box.put(_cacheKey(shopId, 'customers'), jsonEncode(newList));
+    await saveCachedList(_box, shopId, 'customers', newList);
+
+    if (!isOnline) {
+      queueAction('ADD_CUSTOMER', customer, shopId);
+    }
   }
 
   Future<void> updateCustomer(String customerId, Map<String, dynamic> updates) async {
@@ -97,19 +93,22 @@ class KhataNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
       return c;
     }).toList();
     state = AsyncValue.data(updatedList);
-    await _box.put(_cacheKey(shopId, 'customers'), jsonEncode(updatedList));
+    await saveCachedList(_box, shopId, 'customers', updatedList);
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+    if (customerId.startsWith('temp_')) return;
 
-    if (hasInternet) {
+    final isOnline = ref.read(isOnlineProvider);
+
+    if (isOnline) {
       final dio = ref.read(dioProvider);
       try {
         await dio.patch('/customers/$customerId', data: updates);
         state = await AsyncValue.guard(() => _fetchCustomers());
       } catch (e) {
-        // Already updated locally
+        queueAction('UPDATE_CUSTOMER', {'id': customerId, ...updates}, shopId);
       }
+    } else {
+      queueAction('UPDATE_CUSTOMER', {'id': customerId, ...updates}, shopId);
     }
   }
 
@@ -120,19 +119,22 @@ class KhataNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
     final currentList = state.value ?? [];
     final updatedList = currentList.where((c) => c['_id'] != customerId).toList();
     state = AsyncValue.data(updatedList);
-    await _box.put(_cacheKey(shopId, 'customers'), jsonEncode(updatedList));
+    await saveCachedList(_box, shopId, 'customers', updatedList);
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+    if (customerId.startsWith('temp_')) return;
 
-    if (hasInternet) {
+    final isOnline = ref.read(isOnlineProvider);
+
+    if (isOnline) {
       final dio = ref.read(dioProvider);
       try {
         await dio.delete('/customers/$customerId');
         state = await AsyncValue.guard(() => _fetchCustomers());
       } catch (e) {
-        // Already removed locally
+        queueAction('DELETE_CUSTOMER', {'id': customerId}, shopId);
       }
+    } else {
+      queueAction('DELETE_CUSTOMER', {'id': customerId}, shopId);
     }
   }
 
@@ -145,10 +147,9 @@ class KhataNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
     final shopId = await _getShopId();
     if (shopId == null) return;
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+    final isOnline = ref.read(isOnlineProvider);
 
-    if (hasInternet) {
+    if (isOnline) {
       final dio = ref.read(dioProvider);
       try {
         await dio.post('/customers/$customerId/transactions', data: {
@@ -163,6 +164,7 @@ class KhataNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
       }
     }
 
+    // Update local balance
     final currentList = state.value ?? [];
     final updatedList = currentList.map((c) {
       if (c['_id'] == customerId) {
@@ -174,7 +176,16 @@ class KhataNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
       return c;
     }).toList();
     state = AsyncValue.data(updatedList);
-    await _box.put(_cacheKey(shopId, 'customers'), jsonEncode(updatedList));
+    await saveCachedList(_box, shopId, 'customers', updatedList);
+
+    if (!isOnline) {
+      queueAction('ADD_TRANSACTION', {
+        'customerId': customerId,
+        'type': type,
+        'amount': amount,
+        if (note != null) 'note': note,
+      }, shopId);
+    }
   }
 }
 
@@ -193,10 +204,9 @@ class OutstandingSummaryNotifier
   }
 
   Future<Map<String, dynamic>> _fetchSummary() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+    final isOnline = ref.read(isOnlineProvider);
 
-    if (hasInternet) {
+    if (isOnline) {
       final dio = ref.read(dioProvider);
       try {
         final response = await dio.get('/customers/summary');
@@ -233,10 +243,9 @@ final outstandingSummaryProvider =
 
 final customerTransactionsProvider = FutureProvider.autoDispose
     .family<List<Map<String, dynamic>>, String>((ref, customerId) async {
-  final connectivityResult = await Connectivity().checkConnectivity();
-  final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+  final isOnline = ref.read(isOnlineProvider);
 
-  if (hasInternet) {
+  if (isOnline) {
     final dio = ref.read(dioProvider);
     try {
       final response = await dio.get('/customers/$customerId');
@@ -258,10 +267,9 @@ final customerTransactionsProvider = FutureProvider.autoDispose
 
 final customerBillsProvider = FutureProvider.autoDispose
     .family<List<Map<String, dynamic>>, String>((ref, customerId) async {
-  final connectivityResult = await Connectivity().checkConnectivity();
-  final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+  final isOnline = ref.read(isOnlineProvider);
 
-  if (hasInternet) {
+  if (isOnline) {
     final dio = ref.read(dioProvider);
     try {
       final response = await dio.get('/customers/$customerId/bills');

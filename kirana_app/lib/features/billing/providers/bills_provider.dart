@@ -1,9 +1,10 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
+import '../../../core/services/connectivity_service.dart';
+import '../../../core/services/offline_utils.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/utils/token_utils.dart';
+import '../../inventory/providers/inventory_provider.dart';
 
 class BillsNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
   @override
@@ -13,33 +14,26 @@ class BillsNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
 
   Box get _box => Hive.box('bills');
 
-  String _cacheKey(String shopId, String key) => '${shopId}_$key';
-
   Future<String?> _getShopId() => getShopIdFromToken();
 
   Future<List<Map<String, dynamic>>> _fetchBills() async {
     final shopId = await _getShopId();
     if (shopId == null) return [];
 
-    List<Map<String, dynamic>> bills = [];
+    final cached = getCachedList(_box, shopId, 'bills');
+    List<Map<String, dynamic>> bills = List.from(cached);
 
-    final cached = _box.get(_cacheKey(shopId, 'bills'));
-    if (cached != null) {
-      final List<dynamic> decoded = jsonDecode(cached);
-      bills = decoded.cast<Map<String, dynamic>>();
-    }
+    final isOnline = ref.read(isOnlineProvider);
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
-
-    if (hasInternet) {
+    if (isOnline) {
       final dio = ref.read(dioProvider);
       try {
         final response = await dio.get('/bills');
         if (response.data['success'] == true) {
           final List<dynamic> rawList = response.data['data'];
-          bills = rawList.cast<Map<String, dynamic>>();
-          await _box.put(_cacheKey(shopId, 'bills'), jsonEncode(bills));
+          final serverList = rawList.cast<Map<String, dynamic>>();
+          bills = mergeLocalChanges(serverList, cached);
+          await saveCachedList(_box, shopId, 'bills', bills);
         }
       } catch (e) {
         // Fallback to cached
@@ -65,14 +59,15 @@ class BillsNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
     if (shopId == null) return;
 
     final currentList = state.value ?? [];
-    final newList = [bill, ...currentList];
+    final localId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final localBill = {...bill, 'id': localId};
+    final newList = [localBill, ...currentList];
     state = AsyncValue.data(newList);
-    await _box.put(_cacheKey(shopId, 'bills'), jsonEncode(newList));
+    await saveCachedList(_box, shopId, 'bills', newList);
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+    final isOnline = ref.read(isOnlineProvider);
 
-    if (hasInternet) {
+    if (isOnline) {
       final dio = ref.read(dioProvider);
       try {
         final response = await dio.post('/bills', data: {
@@ -88,17 +83,21 @@ class BillsNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
         });
         if (response.data['success'] == true) {
           final serverBill = response.data['data'] as Map<String, dynamic>;
-          final idx = newList.indexWhere((b) => b['id'] == bill['id']);
+          final idx = newList.indexWhere((b) => b['id'] == localId);
           if (idx != -1) {
             newList[idx] = serverBill;
             state = AsyncValue.data(newList);
-            await _box.put(_cacheKey(shopId, 'bills'), jsonEncode(newList));
+            await saveCachedList(_box, shopId, 'bills', newList);
           }
+          ref.read(inventoryProvider.notifier).fetchProducts();
+          return;
         }
       } catch (e) {
-        // Keep local version
+        // Queue for later sync
       }
     }
+
+    queueAction('ADD_BILL', bill, shopId);
   }
 
   Future<void> deleteBill(String billId) async {
@@ -111,19 +110,21 @@ class BillsNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
       return id != billId;
     }).toList();
     state = AsyncValue.data(updatedList);
-    await _box.put(_cacheKey(shopId, 'bills'), jsonEncode(updatedList));
+    await saveCachedList(_box, shopId, 'bills', updatedList);
 
-    final connectivityResult = await Connectivity().checkConnectivity();
-    final hasInternet = !connectivityResult.contains(ConnectivityResult.none);
+    if (billId.startsWith('temp_')) return;
 
-    if (hasInternet) {
+    final isOnline = ref.read(isOnlineProvider);
+
+    if (isOnline) {
       final dio = ref.read(dioProvider);
       try {
         await dio.delete('/bills/$billId');
-        state = await AsyncValue.guard(() => _fetchBills());
       } catch (e) {
-        state = await AsyncValue.guard(() => _fetchBills());
+        queueAction('DELETE_BILL', {'id': billId}, shopId);
       }
+    } else {
+      queueAction('DELETE_BILL', {'id': billId}, shopId);
     }
   }
 }
